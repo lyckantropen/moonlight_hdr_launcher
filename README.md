@@ -14,9 +14,14 @@ mock executable.
 
 Simply launch `installer.exe`. At some point there will be a dialog window
 asking you to rescan for games in GeForce Experience. Only then the last part
-of the script can succeed.
+of the script can succeed. Afterwards, restart GeForce Experience by killing
+the processes in Task Manager or simply reboot your PC. Now in Shield or
+Moonlight you should see the new entry.
 
-## Options
+**Note**: I haven't been able to get the cover art to work for me. Maybe you
+can get better mileage.
+
+## Configuration
 
 The installer puts a blank `moonlinght_hdr_launcher.ini` file in `C:\Program
 Files\moonlight_hdr_launcher`. You can modify it to your needs. It has only 3
