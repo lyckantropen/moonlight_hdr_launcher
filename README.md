@@ -13,7 +13,7 @@ mock executable.
 
 ## Installing
 
-Download [latest release here](/lyckantropen/moonlight_hdr_launcher/releases/latest/download/install.7z).
+Download [latest release here](https://github.com/lyckantropen/moonlight_hdr_launcher/releases/latest/download/install.7z).
 
 Simply launch `installer.exe`. At some point there will be a dialog window
 asking you to rescan for games in GeForce Experience. Only then the last part
