@@ -49,7 +49,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
   std::string launcher_exe = default_launcher;
   bool wait_on_process = true;
-  bool toggle_hdr = true;
+  bool toggle_hdr = false;
 
   if (fs::exists(inifile))
   {
