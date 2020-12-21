@@ -1,8 +1,9 @@
 # Moonlight HDR Launcher
 
 This is a launcher for GameStream that mocks Mass Effect Andromeda to launch
-any executable from a Shield device or Moonlight with HDR support. For example,
-it can be used in conjunction with
+any executable from a Shield device or
+[Moonlight](https://moonlight-stream.org/) with HDR support. For example, it
+can be used in conjunction with
 [gamestream_launchpad](https://github.com/cgarst/gamestream_launchpad) to
 launch GOG Galaxy 2.0 in HDR mode.
 
@@ -38,7 +39,7 @@ put `gamestream_gog_galaxy.ini` and `gamestream_launchpad.exe` in `C:\Program
 Files\moonlight_hdr_launcher` and uncomment the relevant lines in
 `moonlinght_hdr_launcher.ini`.
 
-## Building the launcher
+## Building the launcher executable
 
 * Obtain Boost
 * Obtain NVAPI
