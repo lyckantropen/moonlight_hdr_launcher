@@ -9,7 +9,10 @@
 #include <string>
 #include <chrono>
 #include <sstream>
+#include <optional>
 #include "windows.h"
+
+#include "hdr_toggle.hpp"
 
 namespace bp = boost::process;
 namespace fs = std::filesystem;
@@ -46,6 +49,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
   std::string launcher_exe = default_launcher;
   bool wait_on_process = true;
+  bool toggle_hdr = true;
 
   if (fs::exists(inifile))
   {
@@ -56,11 +60,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pt::read_ini(ini_f, ini);
 
     launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(default_launcher);
-    wait_on_process = ini.get_optional<bool>("options.wait_on_process").get_value_or(true);
+    wait_on_process = ini.get_optional<bool>("options.wait_on_process").get_value_or(wait_on_process);
+    toggle_hdr = ini.get_optional<bool>("options.toggle_hdr").get_value_or(toggle_hdr);
   }
 
   if (wait_on_process)
   {
+    std::optional<HdrToggle> hdr_toggle;
+    if(toggle_hdr) {
+      hdr_toggle = HdrToggle{};
+      hdr_toggle->set_hdr_mode(true);
+    }
+
     log(std::string("Launching '") + launcher_exe + std::string("' and waiting for it to complete."), logfile);
     bp::ipstream is; //reading pipe-stream
     auto c = bp::child{launcher_exe, bp::std_out > is, bp::std_err > is};
@@ -73,6 +84,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       }
     }
     c.wait();
+
+    if(toggle_hdr) {
+      hdr_toggle->set_hdr_mode(false);
+    }
     return c.exit_code();
   }
   else
