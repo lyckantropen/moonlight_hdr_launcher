@@ -25,7 +25,7 @@ endif()
 set_property(TARGET nvapi PROPERTY IMPORTED_LOCATION ${NVAPI_PATH}/${nvlib})
 set_property(TARGET nvapi PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${NVAPI_PATH})
 
-add_executable(MassEffectAndromeda WIN32 main.cpp hdr_toggle.cpp)
+add_executable(MassEffectAndromeda WIN32 main.cpp hdr_toggle.cpp ${CMAKE_CURRENT_BINARY_DIR}/../version.rc)
 
 target_compile_definitions(MassEffectAndromeda PRIVATE -D_WIN32_WINNT=0x0601)
 target_compile_features(MassEffectAndromeda PRIVATE cxx_std_17)
