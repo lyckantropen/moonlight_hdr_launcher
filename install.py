@@ -1,7 +1,7 @@
 import json
 from os.path import expandvars
 from pathlib import Path
-from shutil import copy, copyfile
+from shutil import copyfile
 from tkinter import messagebox
 from hashlib import sha256
 
@@ -17,6 +17,7 @@ pwd = Path(__file__).parent.absolute()
 
 boxart_png = Path(pwd / 'dist' / 'mass_effect_andromeda-box-art.png')
 boxart_jpg = Path(pwd / 'dist' / 'mass_effect_andromeda-box-art.jpg')
+ini = Path(pwd / 'dist' / 'moonlight_hdr_launcher.ini')
 launcher_path = Path(pwd / 'dist' / launcher_exe)
 folder_path = Path(R'C:\Program Files\moonlight_hdr_launcher')
 launcher_final_path = folder_path / launcher_exe
@@ -31,6 +32,7 @@ try:
     copyfile(launcher_path, launcher_final_path)
     copyfile(boxart_jpg, folder_path)
     copyfile(boxart_png, folder_path)
+    copyfile(ini, folder_path)
 except PermissionError as e:
     messagebox.showerror(
         'Permission Error', f'No permission to copy {launcher_exe} to {launcher_final_path}, re-run as Administrator')

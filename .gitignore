@@ -1,2 +1,5 @@
+*.exe
+*.manifest
+*.zip
 /.vscode
 /build
