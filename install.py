@@ -8,6 +8,8 @@ from pathlib import Path
 from tkinter import messagebox
 from typing import List
 
+import oschmod
+
 
 def get_source_folder() -> Path:
     try:
@@ -76,8 +78,12 @@ def install_launcher(source_folder: Path,
         app_data = Path(expandvars(r'%LOCALAPPDATA%'))
         mad_path = next(app_data.glob(
             '**/StreamingAssetsData/mass_effect_andromeda/*'))
-    except StopIteration:
+    except StopIteration as e:
         show_error('Unable to find entry for Mass Effect Andromeda. Have you tried scanning for games in GeForce Experience?', cmdline)
+        raise e
+
+    # set folder read-write
+    oschmod.set_mode_recursive(str(mad_path), 0o777)
 
     # copy files to StreamingAssetsData destination
     for source_file in streaming_files:
@@ -87,6 +93,7 @@ def install_launcher(source_folder: Path,
         except DistutilsFileError:
             show_warning(
                 f'No permission to copy {source_file} to {mad_path}, re-run as Administrator', cmdline)
+    
 
     # modify StreamingSettings.json
     streaming_settings_path = mad_path / 'StreamingSettings.json'
@@ -113,6 +120,9 @@ def install_launcher(source_folder: Path,
     print(f'Final JSON: {final_metadata_json}')
     print(f'Saving to {metadata_path}')
     metadata_path.write_text(final_metadata_json)
+
+    # set folder read-only
+    oschmod.set_mode_recursive(mad_path.as_posix(), 'a+r,a-w')
 
     show_warning('Now restart GeForce Experience or the PC to register the config changes', cmdline)
 
