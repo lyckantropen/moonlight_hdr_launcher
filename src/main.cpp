@@ -45,55 +45,81 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     log(std::string("argv[") + std::to_string(i) + std::string("]: ") + std::string(argv[i]), logfile);
   }
 
-  auto inifile = pwd / fs::path("moonlight_hdr_launcher.ini");
-
-  std::string launcher_exe = default_launcher;
-  bool wait_on_process = true;
-  bool toggle_hdr = false;
-
-  if (fs::exists(inifile))
+  try
   {
-    log(std::string("Found config file: ") + inifile.string(), logfile);
+    auto inifile = pwd / fs::path("moonlight_hdr_launcher.ini");
 
-    std::ifstream ini_f{inifile.c_str()};
-    pt::ptree ini;
-    pt::read_ini(ini_f, ini);
+    std::string launcher_exe = default_launcher;
+    bool wait_on_process = true;
+    bool toggle_hdr = false;
 
-    launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(default_launcher);
-    wait_on_process = ini.get_optional<bool>("options.wait_on_process").get_value_or(wait_on_process);
-    toggle_hdr = ini.get_optional<bool>("options.toggle_hdr").get_value_or(toggle_hdr);
-  }
-
-  if (wait_on_process)
-  {
-    std::optional<HdrToggle> hdr_toggle;
-    if(toggle_hdr) {
-      hdr_toggle = HdrToggle{};
-      hdr_toggle->set_hdr_mode(true);
-    }
-
-    log(std::string("Launching '") + launcher_exe + std::string("' and waiting for it to complete."), logfile);
-    bp::ipstream is; //reading pipe-stream
-    auto c = bp::child{launcher_exe, bp::std_out > is, bp::std_err > is};
-    while (c.running())
+    if (fs::exists(inifile))
     {
-      std::string line;
-      if (std::getline(is, line) && !line.empty())
-      {
-        log(std::string("SUBPROCESS: ") + line, logfile);
-      }
-    }
-    c.wait();
+      log(std::string("Found config file: ") + inifile.string(), logfile);
 
-    if(toggle_hdr) {
-      hdr_toggle->set_hdr_mode(false);
+      std::ifstream ini_f{inifile.c_str()};
+      pt::ptree ini;
+      pt::read_ini(ini_f, ini);
+
+      launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(default_launcher);
+      wait_on_process = ini.get_optional<bool>("options.wait_on_process").get_value_or(wait_on_process);
+      toggle_hdr = ini.get_optional<bool>("options.toggle_hdr").get_value_or(toggle_hdr);
     }
-    return c.exit_code();
+
+    if (wait_on_process)
+    {
+      std::optional<HdrToggle> hdr_toggle;
+      if (toggle_hdr)
+      {
+        hdr_toggle = HdrToggle{};
+        if (!hdr_toggle->set_hdr_mode(true))
+        {
+          log("Failed to set HDR mode", logfile);
+        }
+      }
+
+      log(std::string("Launching '") + launcher_exe + std::string("' and waiting for it to complete."), logfile);
+      bp::ipstream is; //reading pipe-stream
+      auto c = bp::child{launcher_exe, bp::std_out > is, bp::std_err > is};
+      while (c.running())
+      {
+        std::string line;
+        if (std::getline(is, line) && !line.empty())
+        {
+          log(std::string("SUBPROCESS: ") + line, logfile);
+        }
+      }
+      c.wait();
+      if(c.exit_code() != 0) {
+        log(std::string("The command \"") + launcher_exe + std::string("\" has terminated with exit code ") + std::to_string(c.exit_code()), logfile);
+      }
+
+      if (toggle_hdr)
+      {
+        hdr_toggle->set_hdr_mode(false);
+      }
+      return c.exit_code();
+    }
+    else
+    {
+      log(std::string("Launching '") + launcher_exe + std::string("' and detaching immediately."), logfile);
+      bp::spawn(launcher_exe);
+    }
+    return 0;
   }
-  else
+  catch (std::runtime_error &e)
   {
-    log(std::string("Launching '") + launcher_exe + std::string("' and detaching immediately."), logfile);
-    bp::spawn(launcher_exe);
+    log(std::string("Error: ") + std::string(e.what()), logfile);
+    return 1;
   }
-  return 0;
+  catch (std::exception& e)
+  {
+    log(std::string("Error: ") + std::string(e.what()), logfile);
+    return 1;
+  }
+  catch (...)
+  {
+    log("Unknown error", logfile);
+    return 1;
+  }
 }
