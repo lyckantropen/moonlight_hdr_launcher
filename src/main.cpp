@@ -12,6 +12,7 @@
 #include <optional>
 #include "windows.h"
 
+#include "WinReg.hpp"
 #include "hdr_toggle.hpp"
 
 namespace bp = boost::process;
@@ -32,13 +33,46 @@ void log(const std::string &message, std::ofstream &file, bool log_to_stdout = t
   }
 }
 
+std::optional<fs::path> get_destination_folder_path()
+{
+  winreg::RegKey key;
+  auto result = key.TryOpen(HKEY_CURRENT_USER, L"SOFTWARE\\lyckantropen\\moonlight_hdr_launcher");
+  if (result)
+  {
+    if (auto dest_path = key.TryGetStringValue(L"destination_folder"))
+    {
+      return fs::path(*dest_path);
+    }
+    else
+    {
+      return {};
+    }
+  }
+  else
+  {
+    return {};
+  }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
   auto argc = __argc;
   auto argv = __argv;
 
   auto pwd = fs::path(argv[0]).parent_path();
+  auto reg_dest_path = get_destination_folder_path();
+
+  if (reg_dest_path)
+  {
+    pwd = *reg_dest_path;
+  }
+
   auto logfile = std::ofstream{(pwd / fs::path("moonlight_hdr_launcher_log.txt")).string()};
+
+  if (reg_dest_path)
+  {
+    log(std::string("Working folder read from registry: ") + pwd.string(), logfile);
+  }
 
   for (int i = 0; i < argc; ++i)
   {
@@ -64,6 +98,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(default_launcher);
       wait_on_process = ini.get_optional<bool>("options.wait_on_process").get_value_or(wait_on_process);
       toggle_hdr = ini.get_optional<bool>("options.toggle_hdr").get_value_or(toggle_hdr);
+
+      log(std::string("options.launcher_exe=") + launcher_exe, logfile);
+      log(std::string("options.wait_on_process=") + std::to_string(wait_on_process), logfile);
+      log(std::string("options.toggle_hdr=") + std::to_string(toggle_hdr), logfile);
     }
 
     if (wait_on_process)
@@ -71,6 +109,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       std::optional<HdrToggle> hdr_toggle;
       if (toggle_hdr)
       {
+        log("Attempting to set HDR mode", logfile);
         hdr_toggle = HdrToggle{};
         if (!hdr_toggle->set_hdr_mode(true))
         {
@@ -90,12 +129,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
         }
       }
       c.wait();
-      if(c.exit_code() != 0) {
+      if (c.exit_code() != 0)
+      {
         log(std::string("The command \"") + launcher_exe + std::string("\" has terminated with exit code ") + std::to_string(c.exit_code()), logfile);
       }
 
       if (toggle_hdr)
       {
+        log("Attempting to disable HDR mode", logfile);
         hdr_toggle->set_hdr_mode(false);
       }
       return c.exit_code();
@@ -112,7 +153,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     log(std::string("Error: ") + std::string(e.what()), logfile);
     return 1;
   }
-  catch (std::exception& e)
+  catch (std::exception &e)
   {
     log(std::string("Error: ") + std::string(e.what()), logfile);
     return 1;
