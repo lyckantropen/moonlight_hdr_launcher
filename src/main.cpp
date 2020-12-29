@@ -81,6 +81,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
   try
   {
+    log(std::string("Setting current working directory to ") + pwd.string(), logfile);
+    fs::current_path(pwd);
+
     auto inifile = pwd / fs::path("moonlight_hdr_launcher.ini");
 
     std::string launcher_exe = default_launcher;
