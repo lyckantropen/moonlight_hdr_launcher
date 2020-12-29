@@ -15,6 +15,10 @@
 #include "WinReg.hpp"
 #include "hdr_toggle.hpp"
 
+#ifndef MHDRL_VERSION
+#define MHDRL_VERSION "develop"
+#endif
+
 namespace bp = boost::process;
 namespace fs = std::filesystem;
 namespace pt = boost::property_tree;
@@ -68,6 +72,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
   }
 
   auto logfile = std::ofstream{(pwd / fs::path("moonlight_hdr_launcher_log.txt")).string()};
+
+  log(std::string("Moonlight HDR Launcher Version ") + std::string(MHDRL_VERSION), logfile);
 
   if (reg_dest_path)
   {

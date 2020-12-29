@@ -11,7 +11,8 @@ a = Analysis(['install.py'],
                  ('dist/mass_effect_andromeda-box-art.jpg', 'dist'),
                  ('dist/mass_effect_andromeda-box-art.png', 'dist'),
                  ('dist/moonlight_hdr_launcher.ini', 'dist'),
-                 ('dist/MassEffectAndromeda.exe', 'dist')
+                 ('dist/MassEffectAndromeda.exe', 'dist'),
+                 ('dist/version', 'dist')
              ],
              hiddenimports=[],
              hookspath=[],
@@ -37,4 +38,5 @@ exe = EXE(pyz,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=True,
-          uac_admin=True)
+          uac_admin=True,
+          version='version.txt')

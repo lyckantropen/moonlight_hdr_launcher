@@ -27,7 +27,7 @@ set_property(TARGET nvapi PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${NVAPI_PATH})
 
 add_executable(MassEffectAndromeda WIN32 main.cpp hdr_toggle.cpp ${CMAKE_CURRENT_BINARY_DIR}/../version.rc)
 
-target_compile_definitions(MassEffectAndromeda PRIVATE -D_WIN32_WINNT=0x0601 -DUNICODE -D_UNICODE)
+target_compile_definitions(MassEffectAndromeda PRIVATE -D_WIN32_WINNT=0x0601 -DUNICODE -D_UNICODE -DMHDRL_VERSION="${MHDRL_PRODUCT_NUMBER}.${MHDRL_PRODUCT_VERSION}.${MHDRL_BUILD_NUMBER}")
 target_compile_features(MassEffectAndromeda PRIVATE cxx_std_17)
 target_link_libraries(MassEffectAndromeda PRIVATE Boost::headers Boost::filesystem nvapi)
 set_target_properties(MassEffectAndromeda PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/dist)

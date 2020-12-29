@@ -14,6 +14,7 @@ import oschmod
 
 _logger = logging.getLogger('moonlight_hdr_launcher')
 
+
 def get_source_folder() -> Path:
     try:
         source_folder = Path(sys._MEIPASS)
@@ -62,6 +63,7 @@ def install_launcher(source_folder: Path,
     programfiles_files = [launcher_path] + [source_folder/'dist' / file_path for file_path in additional_programfiles_files]
     streaming_files = [source_folder/'dist' / file_path for file_path in additional_streaming_files]
 
+    _logger.debug(f'Installing Moonlight HDR Launcher {(source_folder/"dist"/"version").read_text()}')
     _logger.debug(f'Source folder: {source_folder}')
     _logger.debug(f'Destination folder for launcher: {destination_folder}')
     _logger.debug(f'Launcher path: {launcher_path}')
@@ -130,7 +132,6 @@ def install_launcher(source_folder: Path,
         except DistutilsFileError:
             show_warning(
                 f'No permission to copy {source_file} to {mad_path}, re-run as Administrator', cmdline)
-    
 
     # modify StreamingSettings.json
     streaming_settings_path = mad_path / 'StreamingSettings.json'
