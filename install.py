@@ -81,9 +81,6 @@ def install_launcher(source_folder: Path,
         show_warning(f'No permission to create {destination_folder}, re-run as Administrator', cmdline)
         raise e
 
-    # set destination folder read-write
-    oschmod.set_mode_recursive(str(destination_folder), 0o777)
-
     # copy files to programfiles destination
     for source_path in programfiles_files:
         try:
@@ -95,6 +92,9 @@ def install_launcher(source_folder: Path,
         except DistutilsFileError as e:
             show_warning(f'No permission to copy {source_path} to {destination_folder}, re-run as Administrator', cmdline)
             raise e
+
+    # set destination folder read-write
+    oschmod.set_mode_recursive(str(destination_folder), 0o777)
 
     # write destination_folder to registry
     try:
