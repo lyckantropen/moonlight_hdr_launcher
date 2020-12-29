@@ -1,14 +1,46 @@
 #include "hdr_toggle.hpp"
 #include <algorithm>
+#include <string>
+
+bool _check_status(const NvAPI_Status &s, const std::string &message, bool should_raise)
+{
+  if (s != NVAPI_OK)
+  {
+    NvAPI_ShortString err_msg;
+    if (NvAPI_GetErrorMessage(s, err_msg) != NVAPI_OK)
+    {
+      if (should_raise)
+      {
+        throw NvapiException(message + std::string("Failed to get NVAPI error message"));
+      }
+      else
+      {
+        return false;
+      }
+    }
+    if (should_raise)
+    {
+      throw NvapiException(message + std::string("NVAPI Error") + std::string(err_msg));
+    }
+    else
+    {
+      return false;
+    }
+  }
+  else
+  {
+    return true;
+  }
+}
 
 HdrToggle::HdrToggle()
 {
-  NvAPI_Initialize();
+  check_status(NvAPI_Initialize());
 }
 
 HdrToggle::~HdrToggle()
 {
-  NvAPI_Unload();
+  check_status(NvAPI_Unload());
 }
 
 void HdrToggle::calc_mastering_data(NV_HDR_COLOR_DATA *hdr_data)
@@ -63,15 +95,13 @@ NV_HDR_COLOR_DATA HdrToggle::set_hdr_data(bool enabled)
 
 bool HdrToggle::set_hdr_mode(bool enabled)
 {
-  auto impl = (HdrToggle *)this;
-
   auto disp_ids_hdr = get_hdr_display_ids();
 
   std::vector<bool> statuses;
   for (const auto &disp_id : disp_ids_hdr)
   {
     auto color = set_hdr_data(enabled);
-    auto status = NvAPI_Disp_HdrColorControl(disp_id.displayId, &color) == NVAPI_OK;
+    auto status = check_status_nothrow(NvAPI_Disp_HdrColorControl(disp_id.displayId, &color));
     statuses.push_back(status);
   }
 
@@ -92,7 +122,7 @@ std::vector<NV_GPU_DISPLAYIDS> HdrToggle::get_hdr_display_ids()
   auto gpu_handles = std::vector<NvPhysicalGpuHandle>(NVAPI_MAX_PHYSICAL_GPUS);
   NvU32 num_of_gp_us = 0;
 
-  auto status = NvAPI_EnumPhysicalGPUs(gpu_handles.data(), &num_of_gp_us) == NVAPI_OK;
+  auto status = check_status(NvAPI_EnumPhysicalGPUs(gpu_handles.data(), &num_of_gp_us));
   if (!status)
   {
     return {};
@@ -100,7 +130,7 @@ std::vector<NV_GPU_DISPLAYIDS> HdrToggle::get_hdr_display_ids()
 
   NvU32 connected_displays = 0;
 
-  status = NvAPI_GPU_GetConnectedDisplayIds(gpu_handles[0], NULL, &disp_id_count, NULL) == NVAPI_OK;
+  status = check_status(NvAPI_GPU_GetConnectedDisplayIds(gpu_handles[0], NULL, &disp_id_count, NULL));
   if (!status)
   {
     return {};
@@ -112,7 +142,7 @@ std::vector<NV_GPU_DISPLAYIDS> HdrToggle::get_hdr_display_ids()
     disp_id.version = NV_GPU_DISPLAYIDS_VER;
   }
 
-  status = NvAPI_GPU_GetConnectedDisplayIds(gpu_handles[0], disp_ids.data(), &disp_id_count, NULL) == NVAPI_OK;
+  status = check_status(NvAPI_GPU_GetConnectedDisplayIds(gpu_handles[0], disp_ids.data(), &disp_id_count, NULL));
   if (!status)
   {
     return {};
@@ -123,7 +153,7 @@ std::vector<NV_GPU_DISPLAYIDS> HdrToggle::get_hdr_display_ids()
   {
     NV_HDR_CAPABILITIES hdr_capabilities;
     hdr_capabilities.version = NV_HDR_CAPABILITIES_VER;
-    status = NvAPI_Disp_GetHdrCapabilities(disp_id.displayId, &hdr_capabilities) == NVAPI_OK;
+    status = check_status(NvAPI_Disp_GetHdrCapabilities(disp_id.displayId, &hdr_capabilities));
     if (!status)
     {
       return {};

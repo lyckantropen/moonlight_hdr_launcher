@@ -113,10 +113,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       if (toggle_hdr)
       {
         log("Attempting to set HDR mode", logfile);
-        hdr_toggle = HdrToggle{};
-        if (!hdr_toggle->set_hdr_mode(true))
+        try
         {
-          log("Failed to set HDR mode", logfile);
+          hdr_toggle = HdrToggle{};
+          if (!hdr_toggle->set_hdr_mode(true))
+          {
+            log("Failed to set HDR mode", logfile);
+          }
+        }
+        catch (NvapiException &e)
+        {
+          log(std::string("Failed to set HDR mode: ") + e.what(), logfile);
         }
       }
 
@@ -140,7 +147,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       if (toggle_hdr)
       {
         log("Attempting to disable HDR mode", logfile);
-        hdr_toggle->set_hdr_mode(false);
+        try
+        {
+          hdr_toggle->set_hdr_mode(false);
+        }
+        catch (NvapiException &e)
+        {
+          log(std::string("Failed to disable HDR mode: ") + e.what(), logfile);
+        }
       }
       return c.exit_code();
     }
