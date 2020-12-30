@@ -13,7 +13,7 @@ a = Analysis(['install.py'],
                  ('dist/moonlight_hdr_launcher.ini', 'dist'),
                  ('dist/MassEffectAndromeda.exe', 'dist'),
                  ('dist/version', 'dist'),
-                 ('dist/hdr_toggle.exe', 'dist')
+                 ('dist/crashpad_handler.exe', 'dist')
              ],
              hiddenimports=[],
              hookspath=[],

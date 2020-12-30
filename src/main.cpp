@@ -15,6 +15,11 @@
 #include "WinReg.hpp"
 #include "hdr_toggle.hpp"
 
+#ifdef SENTRY_DEBUG
+#define SENTRY_BUILD_STATIC 1
+#include <sentry.h>
+#endif
+
 #ifndef MHDRL_VERSION
 #define MHDRL_VERSION "develop"
 #endif
@@ -60,6 +65,14 @@ std::optional<fs::path> get_destination_folder_path()
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
+#ifdef SENTRY_DEBUG
+  sentry_options_t *options = sentry_options_new();
+  sentry_options_set_dsn(options, "https://31576029989d413dbf37509b44ef4ce1@o498001.ingest.sentry.io/5574936");
+  sentry_options_set_release(options, (std::string("moonlight_hdr_launcher@") + MHDRL_VERSION).c_str());
+  auto sentry_temp = fs::temp_directory_path() / "moonlight_hdr_launcher-sentry";
+  sentry_options_set_database_pathw(options, sentry_temp.c_str());
+  sentry_init(options);
+#endif
   auto argc = __argc;
   auto argv = __argv;
 
@@ -85,7 +98,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     log(std::string("argv[") + std::to_string(i) + std::string("]: ") + std::string(argv[i]), logfile);
   }
 
+  int retcode = 1;
+#ifndef SENTRY_DEBUG
   try
+#endif
   {
     log(std::string("Setting current working directory to ") + pwd.string(), logfile);
     fs::current_path(pwd);
@@ -119,7 +135,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       if (toggle_hdr)
       {
         log("Attempting to set HDR mode", logfile);
+#ifndef SENTRY_DEBUG
         try
+#endif
         {
           hdr_toggle = HdrToggle{};
           if (!hdr_toggle->set_hdr_mode(true))
@@ -127,10 +145,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             log("Failed to set HDR mode", logfile);
           }
         }
+#ifndef SENTRY_DEBUG
         catch (NvapiException &e)
         {
           log(std::string("Failed to set HDR mode: ") + e.what(), logfile);
         }
+#endif
       }
 
       log(std::string("Launching '") + launcher_exe + std::string("' and waiting for it to complete."), logfile);
@@ -162,28 +182,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
           log(std::string("Failed to disable HDR mode: ") + e.what(), logfile);
         }
       }
-      return c.exit_code();
     }
     else
     {
       log(std::string("Launching '") + launcher_exe + std::string("' and detaching immediately."), logfile);
       bp::spawn(launcher_exe);
     }
-    return 0;
+    retcode = 0;
   }
+#ifndef SENTRY_DEBUG
   catch (std::runtime_error &e)
   {
-    log(std::string("Error: ") + std::string(e.what()), logfile);
-    return 1;
+    sentry_
+        log(std::string("Error: ") + std::string(e.what()), logfile);
   }
   catch (std::exception &e)
   {
     log(std::string("Error: ") + std::string(e.what()), logfile);
-    return 1;
   }
   catch (...)
   {
     log("Unknown error", logfile);
-    return 1;
   }
+#endif
+
+#ifdef SENTRY_DEBUG
+  sentry_shutdown();
+#endif
+
+  return retcode;
 }
