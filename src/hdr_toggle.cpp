@@ -109,10 +109,7 @@ bool HdrToggle::set_hdr_mode(bool enabled)
   {
     return true;
   }
-  else
-  {
-    return *std::find_if_not(std::begin(statuses), std::end(statuses), [](auto &s) { return s; });
-  }
+  return false;
 }
 
 std::vector<NV_GPU_DISPLAYIDS> HdrToggle::get_hdr_display_ids()
