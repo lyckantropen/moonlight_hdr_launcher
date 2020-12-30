@@ -83,15 +83,18 @@ def install_launcher(source_folder: Path,
 
     # copy files to programfiles destination
     for source_path in programfiles_files:
-        try:
-            dest_name, copied = copy_file(source_path, destination_folder, update=True)
-            if copied:
-                _logger.info(f'Copied {source_path} to {dest_name}')
-            else:
-                _logger.info(f'Skipped copying {source_path} to {dest_name} because destination is newer than source')
-        except DistutilsFileError as e:
-            show_warning(f'No permission to copy {source_path} to {destination_folder}, re-run as Administrator', cmdline)
-            raise e
+        if source_path.exists():
+            try:
+                dest_name, copied = copy_file(source_path, destination_folder, update=True)
+                if copied:
+                    _logger.info(f'Copied {source_path} to {dest_name}')
+                else:
+                    _logger.info(f'Skipped copying {source_path} to {dest_name} because destination is newer than source')
+            except DistutilsFileError as e:
+                show_warning(f'No permission to copy {source_path} to {destination_folder}, re-run as Administrator', cmdline)
+                raise e
+        else:
+            _logger.warning(f'Source file {source_path} does not exist')
 
     # set destination folder read-write
     oschmod.set_mode_recursive(str(destination_folder), 0o777)
