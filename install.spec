@@ -12,7 +12,8 @@ a = Analysis(['install.py'],
                  ('dist/mass_effect_andromeda-box-art.png', 'dist'),
                  ('dist/moonlight_hdr_launcher.ini', 'dist'),
                  ('dist/MassEffectAndromeda.exe', 'dist'),
-                 ('dist/version', 'dist')
+                 ('dist/version', 'dist'),
+                 ('dist/hdr_toggle.exe', 'dist')
              ],
              hiddenimports=[],
              hookspath=[],

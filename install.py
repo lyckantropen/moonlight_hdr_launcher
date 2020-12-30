@@ -188,6 +188,6 @@ if __name__ == '__main__':
     install_launcher(source_folder=get_source_folder(),
                      destination_folder=destination_folder,
                      launcher_exe=launcher_exe,
-                     additional_programfiles_files=['moonlight_hdr_launcher.ini'],
+                     additional_programfiles_files=['moonlight_hdr_launcher.ini', 'hdr_toggle.exe'],
                      additional_streaming_files=['mass_effect_andromeda-box-art.png', 'mass_effect_andromeda-box-art.jpg'],
                      cmdline=cmdline)
