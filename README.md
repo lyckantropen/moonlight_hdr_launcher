@@ -17,7 +17,7 @@ mock executable.
 
 Download [latest release here](https://github.com/lyckantropen/moonlight_hdr_launcher/releases/latest/download/install.7z).
 
-Simply launch `installer.exe`. At some point there will be a dialog window
+Simply launch `install.exe`. At some point there will be a dialog window
 asking you to rescan for games in GeForce Experience. Only then the last part
 of the script can succeed. Afterwards, restart GeForce Experience by killing
 the processes in Task Manager or simply reboot your PC. Now in Shield or
@@ -232,7 +232,7 @@ pip install -r requirements.txt
 pyinstaller install.spec
 ```
 
-`installer.exe` will be put in `dist`.
+`install.exe` will be put in `dist`.
 
 ## Attribution
 
