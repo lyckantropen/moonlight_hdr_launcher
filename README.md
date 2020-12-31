@@ -7,6 +7,8 @@ can be used in conjunction with
 [gamestream_launchpad](https://github.com/cgarst/gamestream_launchpad) to
 launch GOG Galaxy 2.0 in HDR mode.
 
+It is loosely based on a solution by [tmac666 on NVIDIA forums](https://www.nvidia.com/en-us/geforce/forums/user/213217/338010/hdr-fix-for-gamestream-and-steam-big-picture-mode/).
+
 The installer puts the files in `C:\Program Files\moonlight_hdr_launcher` and
 modifies the GeForce Experience entry for Mass Effect Andromeda to launch the
 mock executable.
@@ -116,9 +118,10 @@ close_watch_method = window
 **Note**: This will not make OS-level HDR games (e.g. Cyberpunk 2077) work. Buy
 an HDMI dongle with HDR support.
 
-The only way to achieve HDR support is to launch Steam Big Picture through the
-launcher. Bear in mind that this solution creates sessions that need to be
-force-quit from Moonlight. This example does not use `gamestream_launchpad`.
+The only way (allegedly) to achieve HDR support is to launch Steam Big Picture
+through the launcher. Bear in mind that this solution creates sessions that
+need to be force-quit from Moonlight. This example does not use
+`gamestream_launchpad`. *Your mileage may vary.*
 
 `moonlight_hdr_launcher.ini`:
 ```ini
@@ -163,7 +166,9 @@ close_watch_method = window
 
 * **I want to be able to play Mass Effect Andromeda while using this launcher.**
 
-  Sorry, no dice. They are mutually exclusive.
+  This hasn't been tested, but theoretically you are still able
+  to launch Mass Effect Andromeda through the launcher you're
+  running, be it GOG Galaxy 2 or Steam.
 
 * **The installer keeps saying that it can't find the entry for Mass Effect Andromeda.**
 
