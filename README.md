@@ -121,7 +121,10 @@ an HDMI dongle with HDR support.
 The only way (allegedly) to achieve HDR support is to launch Steam Big Picture
 through the launcher. Bear in mind that this solution creates sessions that
 need to be force-quit from Moonlight. This example does not use
-`gamestream_launchpad`. *Your mileage may vary.*
+`gamestream_launchpad`. After starting the launcher, it is imperative that your
+game is in **true** fullscreen mode. "Windowed fullscreen" will not work.
+
+*Your mileage may vary.*
 
 `moonlight_hdr_launcher.ini`:
 ```ini
