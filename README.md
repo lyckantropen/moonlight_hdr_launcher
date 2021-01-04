@@ -71,13 +71,20 @@ options:
 * `launcher_exe` - the command to launch
 * `wait_on_process` - set to 1 to wait until the `launcher_exe` command completes
 * `toggle_hdr` - set to 1 to turn on HDR on all supported monitors for the time
-  when `launcher_exe` is running
+  when `launcher_exe` is running  (set this to 1 only when a HDR supported display is connected to the gamestream host)
 
 I **highly** recommend the setup using
 [gamestream_launchpad](https://github.com/cgarst/gamestream_launchpad). Simply
 put `gamestream_gog_galaxy.ini` and `gamestream_launchpad.exe` in `C:\Program
 Files\moonlight_hdr_launcher` and uncomment the relevant lines in
 `moonlinght_hdr_launcher.ini`.
+
+Additional notes regarding macOS.
+
+* As of Moonlight version 2.2.0 the HDR stream is not rendered correctly, images appear _very_ bright, there is significantly less contrast, not more.  This is a known issue https://github.com/moonlight-stream/moonlight-qt/issues/61
+* To enable HDR streams users need to edit the moonlight plist file located at `~/Library/Preferences/com.moonlight-stream.Moonlight.plist` and set `videocfg` property to `3`
+  * Note, this property will periodically reset to `0`, so if having trouble starting a HDR stream verify `videocfg` is set to `3`.
+* You will know when a HDR stream is being delivered as in the debug overlay, you will see `(Codec: HVEC Main 10)` and HDR options can be enabled in-game.
 
 ### Example configurations
 
@@ -92,6 +99,7 @@ launch GOG Galaxy. First step is to put `gamestream_gog_galaxy.ini` and
 `gamestream_launchpad.exe` in `C:\Program Files\moonlight_hdr_launcher`.
 
 `moonlight_hdr_launcher.ini`:
+
 ```ini
 [options]
 launcher_exe = gamestream_launchpad.exe 2560 1440 gamestream_gog_galaxy.ini
@@ -100,6 +108,7 @@ wait_on_process = 1
 ```
 
 `gamestream_gog_galaxy.ini`:
+
 ```ini
 [LAUNCHER]
 launcher_path = %%programfiles(x86)%%\GOG Galaxy\GalaxyClient.exe
@@ -127,6 +136,7 @@ game is in **true** fullscreen mode. "Windowed fullscreen" will not work.
 *Your mileage may vary.*
 
 `moonlight_hdr_launcher.ini`:
+
 ```ini
 [options]
 launcher_exe = C:\Program Files (x86)\Steam\steam.exe steam://open/bigpicture
@@ -141,6 +151,7 @@ This is the same as the previous example, but using
 [`gamestream_launchpad`](https://github.com/cgarst/gamestream_launchpad).
 
 `moonlight_hdr_launcher.ini`:
+
 ```ini
 [options]
 # launch Steam Big Picture using gamestream_launchpad
@@ -151,6 +162,7 @@ toggle_hdr = 1
 ```
 
 `gamestream_steam_bp.ini`:
+
 ```ini
 [LAUNCHER]
 launcher_path = %%programfiles(x86)%%\Steam\steam.exe steam://open/bigpicture Fullscreen
