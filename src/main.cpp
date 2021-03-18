@@ -40,6 +40,7 @@ void log(const std::string &message, std::ofstream &file, bool log_to_stdout = t
   {
     std::cout << time << ": " << message << std::endl;
   }
+  file.flush();
 }
 
 std::optional<fs::path> get_destination_folder_path()
@@ -65,14 +66,6 @@ std::optional<fs::path> get_destination_folder_path()
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
-#ifdef SENTRY_DEBUG
-  sentry_options_t *options = sentry_options_new();
-  sentry_options_set_dsn(options, "https://31576029989d413dbf37509b44ef4ce1@o498001.ingest.sentry.io/5574936");
-  sentry_options_set_release(options, (std::string("moonlight_hdr_launcher@") + MHDRL_VERSION).c_str());
-  auto sentry_temp = fs::temp_directory_path() / "moonlight_hdr_launcher-sentry";
-  sentry_options_set_database_pathw(options, sentry_temp.c_str());
-  sentry_init(options);
-#endif
   auto argc = __argc;
   auto argv = __argv;
 
@@ -84,7 +77,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     pwd = *reg_dest_path;
   }
 
-  auto logfile = std::ofstream{(pwd / fs::path("moonlight_hdr_launcher_log.txt")).string()};
+  auto log_path = pwd / fs::path("moonlight_hdr_launcher_log.txt");
+  auto logfile = std::ofstream{log_path.string()};
+  auto inifile = pwd / fs::path("moonlight_hdr_launcher.ini");
+
+#ifdef SENTRY_DEBUG
+  sentry_options_t *options = sentry_options_new();
+  sentry_options_set_dsn(options, "https://31576029989d413dbf37509b44ef4ce1@o498001.ingest.sentry.io/5574936");
+  sentry_options_set_release(options, (std::string("moonlight_hdr_launcher@") + MHDRL_VERSION).c_str());
+  auto sentry_temp = fs::temp_directory_path() / "moonlight_hdr_launcher-sentry";
+  sentry_options_set_database_pathw(options, sentry_temp.c_str());
+  sentry_options_add_attachment(options, log_path.string().c_str());
+  sentry_options_add_attachment(options, inifile.string().c_str());
+  sentry_init(options);
+
+  sentry_value_t pwd_c = sentry_value_new_breadcrumb("default", "pwd");
+  sentry_value_set_by_key(pwd_c, "message", sentry_value_new_string(pwd.string().c_str()));
+  sentry_add_breadcrumb(pwd_c);
+  sentry_value_t inifile_c = sentry_value_new_breadcrumb("default", "inifile");
+  sentry_value_set_by_key(inifile_c, "message", sentry_value_new_string(inifile.string().c_str()));
+  sentry_add_breadcrumb(inifile_c);
+#endif
 
   log(std::string("Moonlight HDR Launcher Version ") + std::string(MHDRL_VERSION), logfile);
 
@@ -106,8 +119,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     log(std::string("Setting current working directory to ") + pwd.string(), logfile);
     fs::current_path(pwd);
 
-    auto inifile = pwd / fs::path("moonlight_hdr_launcher.ini");
-
     std::string launcher_exe = default_launcher;
     bool wait_on_process = true;
     bool toggle_hdr = false;
@@ -127,6 +138,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       log(std::string("options.launcher_exe=") + launcher_exe, logfile);
       log(std::string("options.wait_on_process=") + std::to_string(wait_on_process), logfile);
       log(std::string("options.toggle_hdr=") + std::to_string(toggle_hdr), logfile);
+
+#ifdef SENTRY_DEBUG
+      sentry_value_t le_c = sentry_value_new_breadcrumb("default", "launcher_exe");
+      sentry_value_set_by_key(le_c, "message", sentry_value_new_string(launcher_exe.c_str()));
+      sentry_add_breadcrumb(le_c);      
+#endif
     }
 
     if (wait_on_process)
@@ -155,19 +172,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
       log(std::string("Launching '") + launcher_exe + std::string("' and waiting for it to complete."), logfile);
       bp::ipstream is; //reading pipe-stream
-      auto c = bp::child{launcher_exe, bp::std_out > is, bp::std_err > is};
-      while (c.running())
+      try
       {
-        std::string line;
-        if (std::getline(is, line) && !line.empty())
+        auto c = bp::child{launcher_exe, bp::std_out > is, bp::std_err > is};
+        while (c.running())
         {
-          log(std::string("SUBPROCESS: ") + line, logfile);
+          std::string line;
+          if (std::getline(is, line) && !line.empty())
+          {
+            log(std::string("SUBPROCESS: ") + line, logfile);
+          }
+        }
+        c.wait();
+        if (c.exit_code() != 0)
+        {
+          log(std::string("The command \"") + launcher_exe + std::string("\" has terminated with exit code ") + std::to_string(c.exit_code()), logfile);
         }
       }
-      c.wait();
-      if (c.exit_code() != 0)
+      catch (bp::process_error const &e)
       {
-        log(std::string("The command \"") + launcher_exe + std::string("\" has terminated with exit code ") + std::to_string(c.exit_code()), logfile);
+        log(std::string("Error executing command. Error code: ") + std::to_string(e.code().value()) + ", message: " + e.code().message(), logfile);
+#ifdef SENTRY_DEBUG
+        sentry_value_t exc = sentry_value_new_object();
+        sentry_value_set_by_key(exc, "type", sentry_value_new_string("bp::process_error"));
+        sentry_value_set_by_key(exc, "code", sentry_value_new_int32(e.code().value()));
+
+        sentry_value_t event = sentry_value_new_event();
+        sentry_value_set_by_key(event, "exception", exc);
+        sentry_capture_event(event);
+#endif
       }
 
       if (toggle_hdr)
@@ -193,8 +226,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 #ifndef SENTRY_DEBUG
   catch (std::runtime_error &e)
   {
-    sentry_
-        log(std::string("Error: ") + std::string(e.what()), logfile);
+    log(std::string("Error: ") + std::string(e.what()), logfile);
   }
   catch (std::exception &e)
   {

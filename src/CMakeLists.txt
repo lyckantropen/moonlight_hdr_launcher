@@ -27,11 +27,11 @@ if(SENTRY_DEBUG)
     set(SENTRY_BUILD_SHARED_LIBS OFF)
     FetchContent_Declare(
         sentry
-        URL https://github.com/getsentry/sentry-native/releases/download/0.4.4/sentry-native.zip
+        URL https://github.com/getsentry/sentry-native/releases/download/0.4.8/sentry-native.zip
     )
     FetchContent_MakeAvailable(sentry)
     set(SENTRY_LIBRARIES sentry::sentry)
-    set(SENTRY_COMPILE_DEFINITIONS -DSENTRY_DEBUG=1)
+    set(SENTRY_COMPILE_DEFINITIONS -DSENTRY_DEBUG=1 -DSENTRY_BACKEND=crashpad)
     find_file(CRASHPAD_HANDLER crashpad_handler.exe PATHS ${sentry_BINARY_DIR}/crashpad_build/handler)
     file(COPY ${CRASHPAD_HANDLER} DESTINATION ${CMAKE_SOURCE_DIR}/dist)
 endif()
