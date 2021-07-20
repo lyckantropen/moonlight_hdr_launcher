@@ -1,7 +1,10 @@
 __pycache__
+.venv
 *.exe
+*.log
 *.manifest
 *.zip
 /.vscode
 /build
 /dist
+version.txt
