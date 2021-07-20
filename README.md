@@ -226,9 +226,11 @@ close_watch_method = window
 
 ## Building the launcher executable
 
-* Obtain Boost
-* Obtain NVAPI
-* Build with CMake, setting `NVAPI_DL_PATH` to the location of the NVAPI zip file
+* Obtain NVAPI.
+* Install [vcpkg](https://github.com/microsoft/vcpkg).
+* Build with CMake, setting `NVAPI_DL_PATH` to the location of the NVAPI zip
+file and `CMAKE_TOOLCHAIN_FILE` to the location of your vcpkg toolchain file
+(e.g. `C:\vcpkg\scripts\buildsystems\vcpkg.cmake`).
 
 If you don't know how to build projects with CMake, better not attempt it.
 
