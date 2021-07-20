@@ -19,9 +19,9 @@ Download [latest release here](https://github.com/lyckantropen/moonlight_hdr_lau
 
 Simply launch `install.exe`. At some point there will be a dialog window
 asking you to rescan for games in GeForce Experience. Only then the last part
-of the script can succeed. Afterwards, restart GeForce Experience by killing
-the processes in Task Manager or simply reboot your PC. Now in Shield or
-Moonlight you should see the new entry.
+of the script can succeed. The installer will try restarting GeForce
+Experience.  Now in Shield or Moonlight you should see the new entry.
+If you're not seeing it, try rebooting your PC.
 
 **Note**: I haven't been able to get the cover art to work for me. Maybe you
 can get better mileage.
