@@ -12,6 +12,7 @@
 #include <optional>
 #include "windows.h"
 
+
 #include "WinReg.hpp"
 #include "hdr_toggle.hpp"
 
@@ -64,6 +65,33 @@ std::optional<fs::path> get_destination_folder_path()
   }
 }
 
+LRESULT CALLBACK    WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    switch (message)
+    {
+    case WM_COMMAND:
+    {
+        int wmId = LOWORD(wParam);
+        // Parse the menu selections:
+        switch (wmId)
+        {
+        case 105: //IDM_EXIT
+            DestroyWindow(hWnd);
+            break;
+        default:
+            return DefWindowProc(hWnd, message, wParam, lParam);
+        }
+    }
+    break;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+    return 0;
+};
+
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, INT nCmdShow)
 {
   auto argc = __argc;
@@ -71,7 +99,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
   auto pwd = fs::path(argv[0]).parent_path();
   auto reg_dest_path = get_destination_folder_path();
-
+  
   if (reg_dest_path)
   {
     pwd = *reg_dest_path;
@@ -145,9 +173,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       sentry_add_breadcrumb(le_c);      
 #endif
     }
-
+    
     if (wait_on_process)
     {
+      WNDCLASS wc = {};
+      wc.lpfnWndProc = WndProc;
+      wc.hInstance = hInstance;
+      wc.lpszClassName = L"DummyWindow";
+      RegisterClass(&wc);
+      auto launcher_window = CreateWindowW(L"DummyWindow", L"MoonLight HDR Launcher Do Not Close", WS_OVERLAPPEDWINDOW,
+                                           0, 0, 1, 1, nullptr, nullptr, hInstance, nullptr);
+      ShowWindow(launcher_window, nCmdShow);
+
       std::optional<HdrToggle> hdr_toggle;
       if (toggle_hdr)
       {
@@ -215,6 +252,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
           log(std::string("Failed to disable HDR mode: ") + e.what(), logfile);
         }
       }
+      DestroyWindow(launcher_window);
+
     }
     else
     {
@@ -241,6 +280,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 #ifdef SENTRY_DEBUG
   sentry_shutdown();
 #endif
+
+  
 
   return retcode;
 }
