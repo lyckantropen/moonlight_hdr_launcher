@@ -28,23 +28,71 @@
 namespace bp = boost::process;
 namespace fs = std::filesystem;
 namespace pt = boost::property_tree;
+using namespace std::string_literals;
 
 const static std::string default_launcher = "C:/Program Files (x86)/GOG Galaxy/GalaxyClient.exe";
 
+DEVMODE const get_primary_display_registry_settings() {
+    DEVMODE devmode{};
+    devmode.dmSize = sizeof(devmode);
+    auto rval = EnumDisplaySettings(nullptr, ENUM_REGISTRY_SETTINGS,&devmode);
+    return devmode;
+}
 
-void set_resolution(uint16_t width, uint16_t height, uint16_t refresh_rate) {
+DWORD get_max_refresh_rate(uint16_t width, uint16_t height) {
+    DWORD max_refresh_rate = 0;
+    for (DWORD graphics_mode_index = 0;; ++graphics_mode_index) {
+        DEVMODE devmode{};
+        devmode.dmSize = sizeof(devmode);
+        auto rval = EnumDisplaySettings(0, graphics_mode_index, &devmode);
+        if (rval == 0)
+            break;
+        if (devmode.dmPelsWidth == width && devmode.dmPelsHeight == height)
+            max_refresh_rate = std::max(max_refresh_rate, devmode.dmDisplayFrequency);
+    }
+
+    return max_refresh_rate;
+}
+
+LONG _ChangeDisplaySettings(DEVMODE * devmode, DWORD dwFlags) {
+    DEVMODE current_settings{};
+    current_settings.dmSize = sizeof(current_settings);
+    EnumDisplaySettings(0, ENUM_CURRENT_SETTINGS, &current_settings);
+    if(current_settings.dmPelsWidth == devmode->dmPelsWidth && current_settings.dmPelsHeight == devmode->dmPelsHeight 
+            && ((devmode->dmFields & DM_DISPLAYFREQUENCY == 0) || devmode->dmDisplayFrequency == current_settings.dmDisplayFrequency))
+        return DISP_CHANGE_SUCCESSFUL;
+    
+    return ChangeDisplaySettings(devmode, dwFlags);
+    
+}
+
+
+template<typename log_function>
+void set_resolution(uint16_t width, uint16_t height, uint16_t refresh_rate, bool wait_on_process, bool refresh_rate_use_max, log_function log_func) {
     DEVMODE devmode{};
     devmode.dmSize = sizeof(devmode);
     devmode.dmPelsWidth = width;
     devmode.dmPelsHeight = height;
     devmode.dmFields = DM_PELSHEIGHT | DM_PELSWIDTH;
+    if (refresh_rate == 0 && refresh_rate_use_max) {
+        log_func("setting max refresh_rate"s);
+        refresh_rate = get_max_refresh_rate(width, height);
+    }
+    else {
+        if (refresh_rate_use_max)
+            log_func("refresh_rate and refresh_rate_use_max specified, defaulting to specified rate"s);
+    }
     if (refresh_rate != 0) {
         devmode.dmDisplayFrequency = refresh_rate;
         devmode.dmFields |= DM_DISPLAYFREQUENCY;
     }
-    auto result = ChangeDisplaySettings(&devmode, 0);
-    if (result == DISP_CHANGE_SUCCESSFUL) {
-        ;
+    DWORD result;
+    if(wait_on_process) // if we are waiting on the process we can clean up at the end
+        result = _ChangeDisplaySettings(&devmode, CDS_UPDATEREGISTRY);
+    else //otherwise we do the best we can
+        result = _ChangeDisplaySettings(&devmode, 0);
+    if (result != DISP_CHANGE_SUCCESSFUL) {
+        log_func("ChangeDisplaySettings failed error:" + std::to_string(result));
     }
 }
 
@@ -170,6 +218,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     uint16_t resX = 0;
     uint16_t resY = 0;
     uint16_t refresh_rate = 0;
+    bool refresh_rate_use_max = true;
+    bool disable_reset_display_mode = false;
 
     if (fs::exists(inifile))
     {
@@ -185,6 +235,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       resX = ini.get_optional<uint16_t>("options.resX").get_value_or(resX);
       resY = ini.get_optional<uint16_t>("options.resY").get_value_or(resY);
       refresh_rate = ini.get_optional<uint16_t>("options.refresh_rate").get_value_or(refresh_rate);
+      refresh_rate_use_max = ini.get_optional<bool>("options.refresh_rate_use_max").get_value_or(true);
+      disable_reset_display_mode = ini.get_optional<bool>("options.disable_reset_display_mode").get_value_or(false);
 
       log(std::string("options.launcher_exe=") + launcher_exe, logfile);
       log(std::string("options.wait_on_process=") + std::to_string(wait_on_process), logfile);
@@ -196,8 +248,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       sentry_add_breadcrumb(le_c);      
 #endif
     }
+    DEVMODE original_display_mode{};
     if (resX != 0 && resY != 0) {
-        set_resolution(resX, resY, refresh_rate);
+        original_display_mode = get_primary_display_registry_settings();
+        set_resolution(resX, resY, refresh_rate, wait_on_process, refresh_rate_use_max, [&logfile](std::string a)->void {log(a, logfile); });
     }
     
     if (wait_on_process)
@@ -248,6 +302,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
           }
         }
         c.wait();
+        if(!disable_reset_display_mode && original_display_mode.dmSize > 0)
+            _ChangeDisplaySettings(&original_display_mode, CDS_UPDATEREGISTRY);
         if (c.exit_code() != 0)
         {
           log(std::string("The command \"") + launcher_exe + std::string("\" has terminated with exit code ") + std::to_string(c.exit_code()), logfile);
