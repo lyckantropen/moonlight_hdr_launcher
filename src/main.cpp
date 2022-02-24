@@ -140,7 +140,7 @@ LRESULT CALLBACK    WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
         switch (wmId)
         {
         case 105: //IDM_EXIT
-            DestroyWindow(hWnd);
+            PostQuitMessage(0);
             break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -220,6 +220,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     uint16_t refresh_rate = 0;
     bool refresh_rate_use_max = true;
     bool disable_reset_display_mode = false;
+    bool remote_desktop = false;
 
     if (fs::exists(inifile))
     {
@@ -229,7 +230,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       pt::ptree ini;
       pt::read_ini(ini_f, ini);
 
-      launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(default_launcher);
+      launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(""s);
       wait_on_process = ini.get_optional<bool>("options.wait_on_process").get_value_or(wait_on_process);
       toggle_hdr = ini.get_optional<bool>("options.toggle_hdr").get_value_or(toggle_hdr);
       resX = ini.get_optional<uint16_t>("options.resX").get_value_or(resX);
@@ -237,6 +238,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       refresh_rate = ini.get_optional<uint16_t>("options.refresh_rate").get_value_or(refresh_rate);
       refresh_rate_use_max = ini.get_optional<bool>("options.refresh_rate_use_max").get_value_or(true);
       disable_reset_display_mode = ini.get_optional<bool>("options.disable_reset_display_mode").get_value_or(false);
+      remote_desktop = ini.get_optional<bool>("options.remote_desktop").get_value_or(false);
+      if (launcher_exe != ""s) {
+          if (remote_desktop) log("remote_desktop and launcher_exe both specified defaulting to launcher_exe"s, logfile);
+          remote_desktop = false;
+      }
+      if (!remote_desktop && launcher_exe == ""s)
+          launcher_exe = default_launcher;
 
       log(std::string("options.launcher_exe=") + launcher_exe, logfile);
       log(std::string("options.wait_on_process=") + std::to_string(wait_on_process), logfile);
@@ -288,39 +296,51 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 #endif
       }
 
-      log(std::string("Launching '") + launcher_exe + std::string("' and waiting for it to complete."), logfile);
-      bp::ipstream is; //reading pipe-stream
-      try
-      {
-        auto c = bp::child{launcher_exe, bp::std_out > is, bp::std_err > is};
-        while (c.running())
-        {
-          std::string line;
-          if (std::getline(is, line) && !line.empty())
+      if (!remote_desktop) {
+          log(std::string("Launching '") + launcher_exe + std::string("' and waiting for it to complete."), logfile);
+          bp::ipstream is; //reading pipe-stream
+          try
           {
-            log(std::string("SUBPROCESS: ") + line, logfile);
+              auto c = bp::child{ launcher_exe, bp::std_out > is, bp::std_err > is };
+              while (c.running())
+              {
+                  std::string line;
+                  if (std::getline(is, line) && !line.empty())
+                  {
+                      log(std::string("SUBPROCESS: ") + line, logfile);
+                  }
+              }
+              c.wait();
+              if (!disable_reset_display_mode && original_display_mode.dmSize > 0)
+                  _ChangeDisplaySettings(&original_display_mode, CDS_UPDATEREGISTRY);
+              if (c.exit_code() != 0)
+              {
+                  log(std::string("The command \"") + launcher_exe + std::string("\" has terminated with exit code ") + std::to_string(c.exit_code()), logfile);
+              }
           }
-        }
-        c.wait();
-        if(!disable_reset_display_mode && original_display_mode.dmSize > 0)
-            _ChangeDisplaySettings(&original_display_mode, CDS_UPDATEREGISTRY);
-        if (c.exit_code() != 0)
-        {
-          log(std::string("The command \"") + launcher_exe + std::string("\" has terminated with exit code ") + std::to_string(c.exit_code()), logfile);
-        }
-      }
-      catch (bp::process_error const &e)
-      {
-        log(std::string("Error executing command. Error code: ") + std::to_string(e.code().value()) + ", message: " + e.code().message(), logfile);
+          catch (bp::process_error const& e)
+          {
+              log(std::string("Error executing command. Error code: ") + std::to_string(e.code().value()) + ", message: " + e.code().message(), logfile);
 #ifdef SENTRY_DEBUG
-        sentry_value_t exc = sentry_value_new_object();
-        sentry_value_set_by_key(exc, "type", sentry_value_new_string("bp::process_error"));
-        sentry_value_set_by_key(exc, "code", sentry_value_new_int32(e.code().value()));
+              sentry_value_t exc = sentry_value_new_object();
+              sentry_value_set_by_key(exc, "type", sentry_value_new_string("bp::process_error"));
+              sentry_value_set_by_key(exc, "code", sentry_value_new_int32(e.code().value()));
 
-        sentry_value_t event = sentry_value_new_event();
-        sentry_value_set_by_key(event, "exception", exc);
-        sentry_capture_event(event);
+              sentry_value_t event = sentry_value_new_event();
+              sentry_value_set_by_key(event, "exception", exc);
+              sentry_capture_event(event);
 #endif
+          }
+      }
+      else {
+          MSG msg;
+          while (GetMessage(&msg, launcher_window, 0, 0))
+          {
+              if (msg.hwnd == 0)
+                  break;
+              DispatchMessage(&msg);
+          }
+
       }
 
       if (toggle_hdr)
