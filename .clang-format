@@ -1,0 +1,9 @@
+﻿---
+BasedOnStyle: LLVM
+AlignOperands: 'true'
+BreakBeforeTernaryOperators: 'true'
+ColumnLimit: '160'
+ConstructorInitializerIndentWidth: '0'
+Cpp11BracedListStyle: 'true'
+
+...
