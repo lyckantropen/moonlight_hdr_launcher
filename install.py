@@ -69,7 +69,7 @@ def copy_files(source_paths: List[Path], destination_folder: Path, cmdline: bool
     for source_path in source_paths:
         if source_path.exists():
             try:
-                dest_name, copied = copy_file(source_path, destination_folder, update=True)
+                dest_name, copied = copy_file(str(source_path), str(destination_folder), update=True)
                 if copied:
                     _logger.info(f'Copied {source_path} to {dest_name}')
                 else:
@@ -109,8 +109,8 @@ class MoonlightHdrLauncherInstaller:
         self.additional_streaming_files = additional_streaming_files
         self.reg_path = reg_path
         self.launcher_path = Path(source_folder / 'dist' / launcher_exe)
-        self.programfiles_files = [self.launcher_path] + [source_folder/'dist' / file_path for file_path in additional_programfiles_files]
-        self.streaming_files = [source_folder/'dist' / file_path for file_path in additional_streaming_files]
+        self.programfiles_files = [self.launcher_path] + [source_folder / 'dist' / file_path for file_path in additional_programfiles_files]
+        self.streaming_files = [source_folder / 'dist' / file_path for file_path in additional_streaming_files]
 
     def modify_streamsettings_json(self, mad_path: Path) -> None:
         streaming_settings_path = mad_path / 'StreamingSettings.json'
@@ -140,7 +140,7 @@ class MoonlightHdrLauncherInstaller:
         metadata_path.write_text(final_metadata_json)
 
     def install(self, cmdline: bool) -> None:
-        _logger.debug(f'Installing Moonlight HDR Launcher {(self.source_folder/"dist"/"version").read_text()}')
+        _logger.debug(f'Installing Moonlight HDR Launcher {(self.source_folder / "dist" / "version").read_text()}')
         _logger.debug(f'Source folder: {self.source_folder}')
         _logger.debug(f'Destination folder for launcher: {self.destination_folder}')
         _logger.debug(f'Launcher path: {self.launcher_path}')

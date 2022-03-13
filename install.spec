@@ -1,19 +1,21 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+from pathlib import Path
 
 block_cipher = None
 spec_root = os.path.abspath(SPECPATH)
+version_str = Path('install/dist/version').read_text()
 
 a = Analysis(['install.py'],
              pathex=[spec_root],
              binaries=[],
              datas=[
-                 ('dist/mass_effect_andromeda-box-art.jpg', 'dist'),
-                 ('dist/mass_effect_andromeda-box-art.png', 'dist'),
-                 ('dist/moonlight_hdr_launcher.ini', 'dist'),
-                 ('dist/MassEffectAndromeda.exe', 'dist'),
-                 ('dist/version', 'dist'),
-             ] + ([('dist/crashpad_handler.exe', 'dist')] if os.path.exists('dist/crashpad_handler.exe') else []),
+                 ('install/dist/mass_effect_andromeda-box-art.jpg', 'dist'),
+                 ('install/dist/mass_effect_andromeda-box-art.png', 'dist'),
+                 ('install/dist/moonlight_hdr_launcher.ini', 'dist'),
+                 ('install/dist/MassEffectAndromeda.exe', 'dist'),
+                 ('install/dist/version', 'dist'),
+             ] + ([('install/dist/crashpad_handler.exe', 'dist')] if os.path.exists('install/dist/crashpad_handler.exe') else []),
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -30,7 +32,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='install',
+          name=f'install-{version_str}',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
