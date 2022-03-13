@@ -15,7 +15,7 @@ mock executable.
 
 ## Installing
 
-Download [latest release here](https://github.com/lyckantropen/moonlight_hdr_launcher/releases/latest/download/install.7z).
+Download [latest release here](https://github.com/lyckantropen/moonlight_hdr_launcher/releases/latest/).
 
 Simply launch `install.exe`. At some point there will be a dialog window
 asking you to rescan for games in GeForce Experience. Only then the last part
@@ -52,6 +52,7 @@ The `MassEffectAndromeda.exe` launcher does the following:
 * Forces setting the current directory to the install location.
 * Creates the `moonlight_hdr_launcher_log.txt` log file.
 * Looks for the `moonlight_hdr_launcher.ini` configuration file.
+* Creates a dummy window to please GameStream when ending the session.
 * Optionally attempts to enable HDR on all connected monitors with HDR support
   if both `options.toggle_hdr` and `options.wait_on_process` are set to non-zero
   (doing so when not waiting for the process to finish would disable HDR
@@ -71,7 +72,15 @@ options:
 * `launcher_exe` - the command to launch
 * `wait_on_process` - set to 1 to wait until the `launcher_exe` command completes
 * `toggle_hdr` - set to 1 to turn on HDR on all supported monitors for the time
-  when `launcher_exe` is running  (set this to 1 only when a HDR supported display is connected to the gamestream host)
+  when `launcher_exe` is running  (set this to 1 only when a HDR supported display
+  is connected to the gamestream host)
+* `compatibility_window` - create a dummy window that will get detected by GameStream and
+  allow for ending the session gracefully
+* `res_x`, `res_y`, `refresh_rate` - optionally you can set the desired display resolution,
+  will be reset to the original display mode when done
+* `refresh_rate_use_max` - when setting a custom display mode, set this to `1`
+  if you prefer to always set the maximum refresh rate instead of specifying it by hand
+
 
 I **highly** recommend the setup using
 [gamestream_launchpad](https://github.com/cgarst/gamestream_launchpad). Simply
