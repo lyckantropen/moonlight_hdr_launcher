@@ -1,10 +1,12 @@
 __pycache__
+.mypy_cache
 .venv
+.vscode
 *.exe
 *.log
 *.manifest
 *.zip
 /.vscode
-/build
-/dist
+/build*
+/install
 version.txt
