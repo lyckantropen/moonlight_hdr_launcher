@@ -131,6 +131,22 @@ sleep_on_exit = 0
 close_watch_method = window
 ```
 
+**Variant with `compatibility_window=1`**:
+
+This configuration allows for avoiding the "Connection terminated" message
+after quitting `gamestream_launchpad`. Requires `gamestream_launchpad` 0.8
+for the `--no-nv-kill` option.
+
+`moonlight_hdr_launcher.ini`:
+
+```ini
+[options]
+launcher_exe = gamestream_launchpad.exe 2560 1440 gamestream_gog_galaxy.ini --no-nv-kill
+toggle_hdr = 1
+wait_on_process = 1
+compatibility_window = 1
+```
+
 #### HDTV owners without HDR monitor
 
 **Note**: This will not make OS-level HDR games (e.g. Cyberpunk 2077) work. Buy

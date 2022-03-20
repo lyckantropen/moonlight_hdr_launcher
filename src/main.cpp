@@ -3,6 +3,7 @@
 #include <boost/process.hpp>
 #pragma warning(pop)
 #include "windows.h"
+#include <atomic>
 #include <boost/property_tree/ini_parser.hpp>
 #include <chrono>
 #include <filesystem>
@@ -11,6 +12,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <thread>
 
 #include "WinReg.hpp"
 #include "hdr_toggle.hpp"
@@ -137,7 +139,11 @@ public:
       ShowWindow(m_window, nCmdShow);
     }
   }
-  virtual ~DummyWindow() { DestroyWindow(m_window); }
+  virtual ~DummyWindow() {
+    if (m_window) {
+      DestroyWindow(m_window);
+    }
+  }
   void message_loop() {
     MSG msg;
     while (GetMessage(&msg, m_window, 0, 0)) {
@@ -146,6 +152,10 @@ public:
       }
       DispatchMessage(&msg);
     }
+  }
+  void close() {
+    DestroyWindow(m_window);
+    m_window = 0UL;
   }
   static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     switch (message) {
@@ -286,10 +296,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     }
 
     if (wait_on_process) {
-      std::unique_ptr<DummyWindow> launcher_window;
-      if (compatibility_window) {
-        launcher_window = std::make_unique<DummyWindow>(hInstance, nCmdShow);
-      }
+      std::atomic_bool dummy_window_ready = {false};
+      std::unique_ptr<DummyWindow> dummy_window;
+      std::thread dummy_window_thread = std::thread([&]() {
+        if (compatibility_window) {
+          dummy_window = std::make_unique<DummyWindow>(hInstance, nCmdShow);
+          dummy_window_ready.store(true);
+          if (dummy_window) {
+            dummy_window->message_loop();
+          }
+        } else {
+          dummy_window_ready.store(true);
+        }
+      });
 
       std::optional<HdrToggle> hdr_toggle;
       if (toggle_hdr) {
@@ -310,8 +329,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 #endif
       }
 
+      if (dummy_window_ready == false) {
+        dummy_window_ready.wait(true);
+      }
       if (remote_desktop) {
-        launcher_window->message_loop();
+        log("Running in remote desktop mode"s, logfile);
       } else {
         log("Launching '"s + launcher_exe + "' and waiting for it to complete."s, logfile);
         bp::ipstream is; // reading pipe-stream
@@ -340,6 +362,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 #endif
         }
       }
+      if (dummy_window) {
+        dummy_window->close();
+      }
+      dummy_window_thread.join();
 
       if (toggle_hdr) {
         log("Attempting to disable HDR mode", logfile);

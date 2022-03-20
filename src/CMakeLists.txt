@@ -38,7 +38,7 @@ set_property(TARGET nvapi PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${NVAPI_PATH})
 add_executable(MassEffectAndromeda WIN32 main.cpp hdr_toggle.cpp "${MHDRL_RC_VERSION_FILE}")
 target_compile_definitions(MassEffectAndromeda PRIVATE -D_WIN32_WINNT=0x0601 -DUNICODE -D_UNICODE -DMHDRL_VERSION="${MHDRL_PRODUCT_NUMBER}.${MHDRL_PRODUCT_VERSION}.${MHDRL_BUILD_NUMBER}" ${SENTRY_COMPILE_DEFINITIONS})
 target_compile_options(MassEffectAndromeda PRIVATE /EHscr)
-target_compile_features(MassEffectAndromeda PRIVATE cxx_std_17)
+target_compile_features(MassEffectAndromeda PRIVATE cxx_std_20)
 target_link_libraries(MassEffectAndromeda PRIVATE Boost::headers Boost::filesystem nvapi ${SENTRY_LIBRARIES})
 
 install(TARGETS MassEffectAndromeda DESTINATION dist )

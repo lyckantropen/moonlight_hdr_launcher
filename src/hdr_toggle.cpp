@@ -83,7 +83,7 @@ bool HdrToggle::set_hdr_mode(bool enabled) {
     statuses.push_back(status);
   }
 
-  if (std::any_of(std::begin(statuses), std::end(statuses), [](auto &s) { return s; })) {
+  if (std::any_of(std::begin(statuses), std::end(statuses), [](auto s) { return s; })) {
     return true;
   }
   return false;
