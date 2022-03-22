@@ -66,7 +66,7 @@ The `MassEffectAndromeda.exe` launcher does the following:
 ## Configuration
 
 The installer puts a blank `moonlinght_hdr_launcher.ini` file in `C:\Program
-Files\moonlight_hdr_launcher`. You can modify it to your needs. It has only 3
+Files\moonlight_hdr_launcher`. You can modify it to your needs. These are the
 options:
 
 * `launcher_exe` - the command to launch
