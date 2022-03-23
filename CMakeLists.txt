@@ -10,7 +10,7 @@ project(moonlight_hdr_launcher VERSION ${MHDRL_PRODUCT_NUMBER}.${MHDRL_PRODUCT_V
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/version ${MHDRL_PRODUCT_NUMBER}.${MHDRL_PRODUCT_VERSION}.${MHDRL_BUILD_NUMBER})
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version DESTINATION dist)
-install(FILES ${CMAKE_SOURCE_DIR}/dist/mass_effect_andromeda-box-art.jpg ${CMAKE_SOURCE_DIR}/dist/mass_effect_andromeda-box-art.png ${CMAKE_SOURCE_DIR}/dist/moonlight_hdr_launcher.ini DESTINATION dist)
+install(FILES ${CMAKE_SOURCE_DIR}/dist/mass_effect_andromeda-box-art.jpg ${CMAKE_SOURCE_DIR}/dist/mass_effect_andromeda-box-art.png ${CMAKE_SOURCE_DIR}/dist/gamestream_steam_bp.ini DESTINATION dist)
 
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 

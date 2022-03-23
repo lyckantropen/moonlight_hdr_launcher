@@ -19,7 +19,7 @@ import oschmod
 
 _logger = logging.getLogger('moonlight_hdr_launcher')
 LAUNCHER_EXE = 'MassEffectAndromeda.exe'
-ADDITIONAL_PROGRAMFILES_FILES = ['crashpad_handler.exe']
+ADDITIONAL_PROGRAMFILES_FILES = ['crashpad_handler.exe', 'gamestream_steam_bp.ini']
 ADDITIONAL_STREAMING_FILES = ['mass_effect_andromeda-box-art.png', 'mass_effect_andromeda-box-art.jpg']
 REG_PATH = R'SOFTWARE\lyckantropen\moonlight_hdr_launcher'
 DESTINATION_FOLDER = R'C:\Program Files\moonlight_hdr_launcher'

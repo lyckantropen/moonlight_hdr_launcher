@@ -12,7 +12,7 @@ a = Analysis(['install.py'],
              datas=[
                  ('install/dist/mass_effect_andromeda-box-art.jpg', 'dist'),
                  ('install/dist/mass_effect_andromeda-box-art.png', 'dist'),
-                 ('install/dist/moonlight_hdr_launcher.ini', 'dist'),
+                 ('install/dist/gamestream_steam_bp.ini', 'dist'),
                  ('install/dist/MassEffectAndromeda.exe', 'dist'),
                  ('install/dist/version', 'dist'),
              ] + ([('install/dist/crashpad_handler.exe', 'dist')] if os.path.exists('install/dist/crashpad_handler.exe') else []),
