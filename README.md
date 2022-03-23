@@ -65,9 +65,10 @@ The `MassEffectAndromeda.exe` launcher does the following:
 
 ## Configuration
 
-The installer puts a blank `moonlinght_hdr_launcher.ini` file in `C:\Program
-Files\moonlight_hdr_launcher`. You can modify it to your needs. These are the
-options:
+The installer will offer a basic choice of launchers and resolutions to use as
+an initial configuration. Later on you can edit the file
+`moonlinght_hdr_launcher.ini` file in `C:\Program Files\moonlight_hdr_launcher`
+and modify it to your needs. These are the options:
 
 * `launcher_exe` - the command to launch
 * `wait_on_process` - set to 1 to wait until the `launcher_exe` command completes
@@ -76,17 +77,19 @@ options:
   is connected to the gamestream host)
 * `compatibility_window` - create a dummy window that will get detected by GameStream and
   allow for ending the session gracefully
+* `remote_desktop` - instead of `launcher_exe`, simply show the desktop; you
+  need to close the dummy window in order to leave the session
 * `res_x`, `res_y`, `refresh_rate` - optionally you can set the desired display resolution,
   will be reset to the original display mode when done
 * `refresh_rate_use_max` - when setting a custom display mode, set this to `1`
   if you prefer to always set the maximum refresh rate instead of specifying it by hand
 
-
 I **highly** recommend the setup using
 [gamestream_launchpad](https://github.com/cgarst/gamestream_launchpad). Simply
 put `gamestream_gog_galaxy.ini` and `gamestream_launchpad.exe` in `C:\Program
 Files\moonlight_hdr_launcher` and uncomment the relevant lines in
-`moonlinght_hdr_launcher.ini`.
+`moonlinght_hdr_launcher.ini`. **Note**: As of 1.1.2 the installer will download
+`gamestream_launchpad` automatically.
 
 Additional notes regarding macOS.
 

@@ -1,31 +1,136 @@
 import json
+import logging
 import os
 import sys
+import tempfile
+import tkinter as tk
 from distutils.errors import DistutilsFileError
 from distutils.file_util import copy_file
+from enum import Enum
 from hashlib import sha256
 from os.path import expandvars
 from pathlib import Path
 from tkinter import messagebox
-from typing import List
-from winreg import CreateKey, OpenKey, SetValueEx, CloseKey, KEY_WRITE, HKEY_CURRENT_USER, REG_SZ
-import logging
+from typing import List, Tuple
+from winreg import (HKEY_CURRENT_USER, KEY_WRITE, REG_SZ, CloseKey, CreateKey,
+                    OpenKey, SetValueEx)
 
 import oschmod
 
 _logger = logging.getLogger('moonlight_hdr_launcher')
 LAUNCHER_EXE = 'MassEffectAndromeda.exe'
-ADDITIONAL_PROGRAMFILES_FILES = ['moonlight_hdr_launcher.ini', 'crashpad_handler.exe']
+ADDITIONAL_PROGRAMFILES_FILES = ['crashpad_handler.exe']
 ADDITIONAL_STREAMING_FILES = ['mass_effect_andromeda-box-art.png', 'mass_effect_andromeda-box-art.jpg']
 REG_PATH = R'SOFTWARE\lyckantropen\moonlight_hdr_launcher'
 DESTINATION_FOLDER = R'C:\Program Files\moonlight_hdr_launcher'
+GSLP_URL = "https://github.com/cgarst/gamestream_launchpad/releases/download/0.8/gamestream_launchpad.zip"
+
+
+class BaseConfig(Enum):
+    BigPicture = 1
+    GogGalaxy = 2
+    RemoteDesktop = 3
+
+
+class ResolutionConfig(Enum):
+    Res1080p = 0
+    Res1440p = 1
+    Res4k = 2
+    ResNative = 3
+
+
+BASE_CONFIGS = {
+    BaseConfig.BigPicture: '''
+[options]
+# launch Steam Big Picture using gamestream_launchpad
+launcher_exe = gamestream_launchpad.exe {res_x} {res_y} gamestream_steam_bp.ini
+wait_on_process = 1
+toggle_hdr = 1
+''',
+    BaseConfig.GogGalaxy: '''
+[options]
+launcher_exe = gamestream_launchpad.exe {res_x} {res_y} gamestream_gog_galaxy.ini --no-nv-kill
+toggle_hdr = 1
+wait_on_process = 1
+compatibility_window = 1
+''',
+    BaseConfig.RemoteDesktop: '''
+[options]
+remote_desktop = 1
+toggle_hdr = 1
+wait_on_process = 1
+compatibility_window = 1
+res_x = {res_x}
+res_y = {res_y}
+refresh_rate_use_max = 1
+'''
+}
+
+RESOLUTION_CONFIGS = {
+    ResolutionConfig.Res1080p: (1920, 1080),
+    ResolutionConfig.Res1440p: (2560, 1440),
+    ResolutionConfig.Res4k: (3840, 2160)
+}
+
+
+def configuration_select() -> Tuple[BaseConfig, ResolutionConfig]:
+    root = tk.Tk()
+    cfg = tk.IntVar()
+    cfg.set(1)
+    res = tk.IntVar()
+    res.set(0)
+
+    text1 = tk.Label(root, text="Please select initial configuration")
+    text2 = tk.Label(root, text="Launcher:")
+    R11 = tk.Radiobutton(root, text="Steam Big Picture", variable=cfg, value=1)
+    R12 = tk.Radiobutton(root, text="GOG Galaxy 2.0", variable=cfg, value=2)
+    R13 = tk.Radiobutton(root, text="Remote desktop", variable=cfg, value=3)
+    text3 = tk.Label(root, text="Resolution:")
+    R21 = tk.Radiobutton(root, text="1920x1080 (1080p)", variable=res, value=0)
+    R22 = tk.Radiobutton(root, text="2560x1440 (1440p)", variable=res, value=1)
+    R23 = tk.Radiobutton(root, text="3840x2160 (4k)", variable=res, value=2)
+    R24 = tk.Radiobutton(root, text="Native (detect)", variable=res, value=3)
+    text1.pack(anchor=tk.CENTER)
+    text2.pack(anchor=tk.CENTER)
+    R11.pack(anchor=tk.W)
+    R12.pack(anchor=tk.W)
+    R13.pack(anchor=tk.W)
+    text3.pack(anchor=tk.CENTER)
+    R21.pack(anchor=tk.W)
+    R22.pack(anchor=tk.W)
+    R23.pack(anchor=tk.W)
+    R24.pack(anchor=tk.W)
+
+    OK = tk.Button(root, text="OK", command=lambda: root.destroy())
+    OK.pack(anchor=tk.CENTER)
+
+    root.mainloop()
+    return BaseConfig(cfg.get()), ResolutionConfig(res.get())
+
+
+def download_gamestream_launchpad(dest: Path) -> None:
+    import io
+    import zipfile
+
+    import requests
+
+    r = requests.get(GSLP_URL, stream=True)
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall(dest)
+
+
+def get_resolution() -> Tuple[int, int]:
+    import ctypes
+    user32 = ctypes.windll.user32
+    user32.SetProcessDPIAware()
+    return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 
 def get_source_folder() -> Path:
     try:
         source_folder = Path(sys._MEIPASS)
     except Exception:
-        source_folder = Path(__file__).parent.absolute()
+        source_folder = Path(__file__).parent.absolute() / "install"
     return source_folder
 
 
@@ -118,8 +223,7 @@ class MoonlightHdrLauncherInstaller:
         streaming_settings['GameData'][0]['StreamingDisplayName'] = 'HDR Launcher'
         streaming_settings['GameData'][0]['StreamingCaption'] = 'HDR Launcher'
         streaming_settings['GameData'][0]['StreamingClassName'] = 'HDR Launcher'
-        streaming_settings['GameData'][0][
-            'StreamingCommandLine'] = f'start {self.launcher_exe}'
+        streaming_settings['GameData'][0]['StreamingCommandLine'] = f'start {self.launcher_exe}'
         final_json = json.dumps(streaming_settings, indent=4)
         _logger.debug(f'Final StreamingSettings.json: {final_json}')
         _logger.debug(f'Saving to {streaming_settings_path}')
@@ -154,6 +258,37 @@ class MoonlightHdrLauncherInstaller:
         create_folder(self.destination_folder, cmdline)
         copy_files(self.programfiles_files, self.destination_folder, cmdline)
 
+        # install gamestream launchpad
+        try:
+            with tempfile.TemporaryDirectory() as gslp_temp:
+                _logger.debug(f'Downloading gamestream_launchpad files from: {GSLP_URL}')
+                download_gamestream_launchpad(Path(gslp_temp))
+                gslp_files = list(Path(gslp_temp).glob('**/*'))
+                _logger.debug(f'Downloaded gamestream_launchpad files: {gslp_files}')
+                # install
+                copy_files(gslp_files, self.destination_folder, cmdline)
+        except Exception as e:
+            _logger.error(f'Error downloading gamestream_launchpad: {e}')
+            show_error(f'Error downloading gamestream_launchpad: {e}', cmdline)
+
+        # install initial configuration
+        ini_file = self.destination_folder / 'moonlight_hdr_launcher.ini'
+        if not ini_file.exists():
+            config, res = configuration_select()
+            _logger.debug(f'Selected base configuration: {str(config)}')
+
+            if res == ResolutionConfig.ResNative:
+                try:
+                    res_x, res_y = get_resolution()
+                except BaseException:
+                    res_x, res_y = 1920, 1080
+            else:
+                res_x, res_y = RESOLUTION_CONFIGS[res]
+            _logger.debug(f'Writing config file: {ini_file}')
+            config_ini = BASE_CONFIGS[config].format(res_x=res_x, res_y=res_y)
+            ini_file.write_text(config_ini)
+            _logger.debug(f'Written configuration: {config_ini}')
+
         # set destination folder read-write
         oschmod.set_mode_recursive(str(self.destination_folder), 0o777)
 
@@ -168,12 +303,13 @@ class MoonlightHdrLauncherInstaller:
         show_warning('Before clicking OK, open GeForce Experience and re-scan for games.', cmdline)
 
         mad_path = get_masseffectandromeda_location(cmdline)
+        write_path_to_reg(mad_path, self.reg_path, 'stream_assets_folder')
 
         # set StreamingAssetsData folder read-write
         oschmod.set_mode_recursive(str(mad_path), 0o777)
 
         # copy files to StreamingAssetsData destination
-        copy_files(self.streaming_files, self.destination_folder, cmdline)
+        copy_files(self.streaming_files, mad_path, cmdline)
 
         self.modify_streamsettings_json(mad_path)
         self.modify_metadata_json(mad_path)

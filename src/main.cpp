@@ -31,7 +31,7 @@ namespace fs = std::filesystem;
 namespace pt = boost::property_tree;
 using namespace std::string_literals;
 
-const static std::string default_launcher = "C:/Program Files (x86)/GOG Galaxy/GalaxyClient.exe";
+const static std::string default_launcher = "C:\Program Files (x86)\Steam\steam.exe steam://open/bigpicture";
 
 DEVMODE const get_primary_display_registry_settings() {
   DEVMODE devmode{};
@@ -233,7 +233,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
     log("Setting current working directory to "s + pwd.string(), logfile);
     fs::current_path(pwd);
 
-    std::string launcher_exe = default_launcher;
+    std::string launcher_exe;
     bool wait_on_process = true;
     bool toggle_hdr = false;
     uint16_t res_x = 0;
@@ -250,7 +250,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
       pt::ptree ini;
       pt::read_ini(ini_f, ini);
 
-      launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(""s);
+      launcher_exe = ini.get_optional<std::string>("options.launcher_exe").get_value_or(launcher_exe);
       wait_on_process = ini.get_optional<bool>("options.wait_on_process").get_value_or(wait_on_process);
       toggle_hdr = ini.get_optional<bool>("options.toggle_hdr").get_value_or(toggle_hdr);
       res_x = ini.get_optional<uint16_t>("options.res_x").get_value_or(res_x);
