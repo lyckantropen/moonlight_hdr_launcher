@@ -17,14 +17,14 @@ mock executable.
 
 Download [latest release here](https://github.com/lyckantropen/moonlight_hdr_launcher/releases/latest/).
 
-Simply launch `install.exe`. At some point there will be a dialog window
+Unzip and launch the installer. At some point there will be a dialog window
 asking you to rescan for games in GeForce Experience. Only then the last part
 of the script can succeed. The installer will try restarting GeForce
 Experience.  Now in Shield or Moonlight you should see the new entry.
 If you're not seeing it, try rebooting your PC.
 
-**Note**: I haven't been able to get the cover art to work for me. Maybe you
-can get better mileage.
+**Note**: I haven't been able to get the cover art to work for me. If you know
+how to do it, please reach out.
 
 ## Description
 
@@ -102,7 +102,7 @@ Additional notes regarding macOS.
 
 #### HDTV & HDR monitor owners
 
-If you have an HDR monitor connected to your PC or an HDMI dongle that supports
+If you have an HDR monitor connected to your PC or a DisplayPort dongle that supports
 HDR, you can rely on the `toggle_hdr` option.
 
 This example will use
@@ -152,8 +152,12 @@ compatibility_window = 1
 
 #### HDTV owners without HDR monitor
 
+**Update**: For a while GameStream has been adding the entry for Steam Big Picture
+on its own as a separate cover and it does support HDR. The solution below is
+redundant. OS-level HDR games still won't work though.
+
 **Note**: This will not make OS-level HDR games (e.g. Cyberpunk 2077) work. Buy
-an HDMI dongle with HDR support.
+a DisplayPort dongle with HDR support.
 
 The only way (allegedly) to achieve HDR support is to launch Steam Big Picture
 through the launcher. Bear in mind that this solution creates sessions that
@@ -209,9 +213,11 @@ close_watch_method = window
 
 * **I want to be able to play Mass Effect Andromeda while using this launcher.**
 
-  This hasn't been tested, but theoretically you are still able
-  to launch Mass Effect Andromeda through the launcher you're
-  running, be it GOG Galaxy 2 or Steam.
+  GameStream will add two separate entries and you will see two
+  covers for Mass Effect Andromeda in Moonlight, but one will have the
+  proper artwork and it's the one with the real game. In any case
+  you are still able to launch Mass Effect Andromeda through
+  the launcher you're running, be it GOG Galaxy 2 or Steam.
 
 * **The installer keeps saying that it can't find the entry for Mass Effect Andromeda.**
 
@@ -225,7 +231,7 @@ close_watch_method = window
 
 * **I don't have an HDR monitor and I want to play Cyberpunk 2077 in HDR.**
 
-  You can't. Cyberpunk 2077 is an OS-level HDR game. You need at least an HDMI
+  You can't. Cyberpunk 2077 is an OS-level HDR game. You need at least a DisplayPort
   dongle that supports HDR.
 
 * **Nothing happens when I run the "Mass Effect Andromeda" entry in Moonlight/Shield.**
