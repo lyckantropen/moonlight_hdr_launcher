@@ -67,7 +67,7 @@ The `MassEffectAndromeda.exe` launcher does the following:
 
 The installer will offer a basic choice of launchers and resolutions to use as
 an initial configuration. Later on you can edit the file
-`moonlinght_hdr_launcher.ini` file in `C:\Program Files\moonlight_hdr_launcher`
+`moonlight_hdr_launcher.ini` file in `C:\Program Files\moonlight_hdr_launcher`
 and modify it to your needs. These are the options:
 
 * `launcher_exe` - the command to launch
