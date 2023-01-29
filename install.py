@@ -1,9 +1,11 @@
 import json
 import logging
 import os
+import shutil
 import sys
 import tempfile
 import tkinter as tk
+import traceback
 from distutils.errors import DistutilsFileError
 from distutils.file_util import copy_file
 from enum import Enum
@@ -12,8 +14,8 @@ from os.path import expandvars
 from pathlib import Path
 from tkinter import messagebox
 from typing import List, Tuple
-from winreg import (HKEY_CURRENT_USER, KEY_WRITE, REG_SZ, CloseKey, CreateKey,
-                    OpenKey, SetValueEx)
+from winreg import (HKEY_CURRENT_USER, KEY_READ, KEY_WRITE, REG_SZ, CloseKey,
+                    CreateKey, DeleteKey, OpenKey, QueryValueEx, SetValueEx)
 
 import oschmod
 
@@ -73,6 +75,27 @@ RESOLUTION_CONFIGS = {
 }
 
 
+def install_or_uninstall_select() -> bool:
+    root = tk.Tk()
+    install = tk.IntVar()
+    install.set(1)
+
+    text = tk.Label(root, text="What do you want to do?")
+    ri = tk.Radiobutton(root, text="Install", variable=install, value=1)
+    ru = tk.Radiobutton(root, text="Uninstall (will remove current config)", variable=install, value=0)
+    text.pack(anchor=tk.CENTER)
+    ri.pack(anchor=tk.W)
+    ru.pack(anchor=tk.W)
+
+    OK = tk.Button(root, text="OK", command=lambda: root.destroy())
+    Cancel = tk.Button(root, text="Cancel", command=sys.exit)
+    OK.pack(anchor=tk.CENTER)
+    Cancel.pack(anchor=tk.CENTER)
+    root.mainloop()
+
+    return install.get()
+
+
 def configuration_select() -> Tuple[BaseConfig, ResolutionConfig]:
     root = tk.Tk()
     cfg = tk.IntVar()
@@ -102,7 +125,9 @@ def configuration_select() -> Tuple[BaseConfig, ResolutionConfig]:
     R24.pack(anchor=tk.W)
 
     OK = tk.Button(root, text="OK", command=lambda: root.destroy())
+    Cancel = tk.Button(root, text="Cancel", command=sys.exit)
     OK.pack(anchor=tk.CENTER)
+    Cancel.pack(anchor=tk.CENTER)
 
     root.mainloop()
     return BaseConfig(cfg.get()), ResolutionConfig(res.get())
@@ -155,10 +180,31 @@ def show_warning(message: str, cmdline: bool = False) -> None:
         messagebox.showwarning('Warning', message)
 
 
+def show_info(message: str, cmdline: bool = False) -> None:
+    _logger.debug(message)
+    if cmdline:
+        print(f'INFO: {message}')
+    else:
+        messagebox.showinfo('Information', message)
+
+
 def write_path_to_reg(destination_folder: Path, reg_path: str, reg_key: str) -> None:
     CreateKey(HKEY_CURRENT_USER, reg_path)
     registry_key = OpenKey(HKEY_CURRENT_USER, reg_path, 0, KEY_WRITE)
     SetValueEx(registry_key, reg_key, 0, REG_SZ, str(destination_folder))
+    CloseKey(registry_key)
+
+
+def read_path_from_reg(reg_path: str, reg_key: str) -> str:
+    registry_key = OpenKey(HKEY_CURRENT_USER, reg_path, 0, KEY_READ)
+    value, _ = QueryValueEx(registry_key, reg_key)
+    CloseKey(registry_key)
+    return value
+
+
+def delete_key(reg_path: str, reg_key: str) -> None:
+    registry_key = OpenKey(HKEY_CURRENT_USER, reg_path, 0, KEY_WRITE)
+    DeleteKey(registry_key, reg_key)
     CloseKey(registry_key)
 
 
@@ -243,6 +289,12 @@ class MoonlightHdrLauncherInstaller:
         _logger.debug(f'Saving to {metadata_path}')
         metadata_path.write_text(final_metadata_json)
 
+    def remove_from_applicationdata_json(self, mad_path: Path) -> None:
+        applicationdata_path = mad_path.parent.parent / 'ApplicationData.json'
+        applicationdata = json.loads(applicationdata_path.read_text())
+        applicationdata['metadata'].pop('mass_effect_andromeda')
+        applicationdata_path.write_text(json.dumps(applicationdata, indent=4))
+
     def install(self, cmdline: bool) -> None:
         _logger.debug(f'Installing Moonlight HDR Launcher {(self.source_folder / "dist" / "version").read_text()}')
         _logger.debug(f'Source folder: {self.source_folder}')
@@ -322,6 +374,47 @@ class MoonlightHdrLauncherInstaller:
         os.system('taskkill /f /im "nvcontainer.exe"')
         os.system('taskkill /f /im "NVIDIA Share.exe"')
 
+    def uninstall(self, cmdline: bool) -> None:
+        try:
+            _logger.debug('Uninstalling Moonlight HDR Launcher')
+            # mad_path = get_masseffectandromeda_location(cmdline)
+            destination_folder = Path(read_path_from_reg(self.reg_path, 'destination_folder'))
+            stream_assets_folder = Path(read_path_from_reg(self.reg_path, 'stream_assets_folder'))
+
+            _logger.debug(f'Read destination_folder from registry: {destination_folder}, exists={destination_folder.exists()}')
+            _logger.debug(f'Read stream_assets_folder from registry: {stream_assets_folder}, exists={stream_assets_folder.exists()}')
+
+            if stream_assets_folder.exists():
+                _logger.debug(f'Setting {stream_assets_folder.parent} back to read-write')
+                oschmod.set_mode_recursive(str(stream_assets_folder.parent), 0o777)
+                _logger.debug(f'Removing {stream_assets_folder.parent} recursively')
+                shutil.rmtree(stream_assets_folder.parent)
+                self.remove_from_applicationdata_json(stream_assets_folder)
+
+            if destination_folder.exists():
+                _logger.debug(f'Setting {destination_folder} back to read-write')
+                oschmod.set_mode_recursive(str(destination_folder), 0o777)
+                _logger.debug(f'Removing {destination_folder} recursively')
+                shutil.rmtree(destination_folder)
+
+            _logger.debug(f'Removing destination_folder from {self.reg_path}')
+            delete_key(self.reg_path, 'destination_folder')
+            _logger.debug(f'Removing stream_assets_folder from {self.reg_path}')
+            delete_key(self.reg_path, 'stream_assets_folder')
+
+            show_warning(
+                'The uninstaller will now attempt to restart GeForce Experience.'
+                'Go to GeForce Experience and re-scan for games. If the entry does not disappear, reboot your PC.',
+                cmdline)
+            # kill NVIDIA processes
+            os.system('taskkill /f /im "nvcontainer.exe"')
+            os.system('taskkill /f /im "NVIDIA Share.exe"')
+        except Exception as e:
+            _logger.error(e)
+            _logger.error(traceback.format_exc())
+            show_error(f'Failed to uninstall: {e}')
+            raise e
+
 
 if __name__ == '__main__':
     import argparse
@@ -330,6 +423,7 @@ if __name__ == '__main__':
     parser.add_argument('--destination-folder', type=str, required=False,
                         default=DESTINATION_FOLDER, help='Destination path')
     parser.add_argument('--cmdline', action='store_true', help='Do not show windows with prompts')
+    parser.add_argument('--uninstall', action='store_true', help='Uninstall Moonlight HDR Launcher')
     args = parser.parse_args(sys.argv[1:])
 
     log_file = Path(__file__).parent.absolute() / 'moonlight_hdr_launcher_install.log'
@@ -338,10 +432,14 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         filename=log_file.as_posix(),
                         level=logging.DEBUG)
+    file_output_handler = logging.FileHandler('moonlight_hdr_launcher_install_log.txt')
+    _logger.addHandler(file_output_handler)
 
     launcher_exe = args.launcher_exe
     destination_folder = Path(args.destination_folder)
     cmdline = args.cmdline
+
+    install_or_uninstall = False if args.uninstall else install_or_uninstall_select()
 
     installer = MoonlightHdrLauncherInstaller(
         source_folder=get_source_folder(),
@@ -351,4 +449,11 @@ if __name__ == '__main__':
         additional_streaming_files=ADDITIONAL_STREAMING_FILES,
         reg_path=REG_PATH)
 
-    installer.install(cmdline)
+    if install_or_uninstall:
+        installer.install(cmdline)
+    else:
+        try:
+            installer.uninstall(cmdline)
+            show_info('Uninstalled successfully', cmdline)
+        except Exception:
+            show_error('Uninstallation failed', cmdline)
