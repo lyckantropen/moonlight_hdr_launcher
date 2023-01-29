@@ -5,6 +5,5 @@
         "boost-filesystem",
         "boost-process",
         "boost-property-tree"
-    ],
-    "builtin-baseline": "876e67c26e42c0c7d2daa41c6871af117ae6bec5"
+    ]
 }
