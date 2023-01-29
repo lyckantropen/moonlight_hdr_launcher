@@ -31,7 +31,7 @@ namespace fs = std::filesystem;
 namespace pt = boost::property_tree;
 using namespace std::string_literals;
 
-const static std::string default_launcher = "C:\Program Files (x86)\Steam\steam.exe steam://open/bigpicture";
+const static std::string default_launcher = "C:\\Program Files (x86)\\Steam\\steam.exe steam://open/bigpicture";
 
 DEVMODE const get_primary_display_registry_settings() {
   DEVMODE devmode{};
