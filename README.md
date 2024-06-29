@@ -59,9 +59,6 @@ The `MassEffectAndromeda.exe` launcher does the following:
   immenently because of NVAPI unloading).
 * Launches the `options.launcher_exe` command as a subprocess and optionally
   waits for it to terminate if `options.wait_on_process` is set to non-zero.
-* In the event of an exception, collects crash information and uploads it to
-  [sentry.io](https://sentry.io). The data is anonymous, *no unique user or
-  machine data is transferred*.
 
 ## Configuration
 
