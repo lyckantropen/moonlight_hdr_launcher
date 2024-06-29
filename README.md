@@ -1,5 +1,10 @@
 # Moonlight HDR Launcher
 
+> [!WARNING]
+> GameStream has been discontinued and therefore using Moonlight HDR Launcher
+> **no longer makes sense**. Go check out [Sunshine](https://docs.lizardbyte.dev/projects/sunshine/en/latest/)
+> which supports HDR streaming out of the box!
+
 This is a launcher for GameStream that mocks Mass Effect Andromeda to launch
 any executable from a Shield device or
 [Moonlight](https://moonlight-stream.org/) with HDR support. For example, it
